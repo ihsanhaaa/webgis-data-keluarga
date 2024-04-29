@@ -18,7 +18,12 @@ return new class extends Migration
             $table->foreignId('kecamatan_id');
             $table->foreignId('desa_id');
             $table->foreignId('provinsi_id');
+            $table->foreignId('kabupaten_id');
+            $table->string('no_kk');
             $table->string('alamat');
+            $table->string('rtrw');
+            $table->string('kode_pos');
+            $table->string('foto_rumah');
             $table->timestamps();
         });
     }

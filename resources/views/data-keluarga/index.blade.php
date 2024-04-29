@@ -20,12 +20,24 @@
 
     <div class="container my-3">
         @if ($message = Session::get('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <strong>Success!</strong> {{ $message }}.
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 my-5" role="alert">
+                <p class="font-bold">Success</p>
+                <p>{{ $message }}</p>
+            </div>
+        @elseif ($message = Session::get('alert'))
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 my-5" role="alert">
+                <p class="font-bold">Alert</p>
+                <p>{{ $message }}</p>
             </div>
         @endif
 
-        <a href="{{ route('data-keluarga.create') }}" class="btn btn-primary">Tambah Data Keluarga</a>
+        @if (count($errors) > 0)
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 my-5" role="alert">
+                @foreach ($errors->all() as $error)
+                    <strong>{{ $error }}</strong><br>
+                @endforeach
+            </div>
+        @endif
     </div>
     <div class="card container">
         <div class="card-body">
@@ -45,45 +57,82 @@
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(map);
 
+            fetch("/geojson/jorgi.geojson")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(geojsonData => {
+        function onEachFeature(feature, layer) {
+            layer.on('click', function (e) {
+                var osm_id = feature.properties.osm_id;
 
-            // Fetch dan tambahkan layer GeoJSON pertama
-            fetch("/geojson/Data1.geojson")
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(geojsonData => {
-                    // Fungsi untuk menangani klik pada fitur
-                    function onEachFeature(feature, layer) {
-                        layer.on('click', function (e) {
-                            var osm_id = feature.properties.osm_id;
+                // Lakukan request ke server untuk mendapatkan data kartu_keluargas berdasarkan osm_id
+                fetch("/get-kartu-keluarga/" + osm_id)
+                    .then(response => response.json())
+                    .then(kartuKeluargaData => {
+                        // Buat isi popup dengan data kartu_keluargas dalam format tabel
+                        var content = "<table class='table'>";
 
-                            // Lakukan request ke server untuk mendapatkan data kartu_keluargas berdasarkan osm_id
-                            fetch("/get-kartu-keluarga/" + osm_id)
-                                .then(response => response.json())
-                                .then(kartuKeluargaData => {
-                                    // Buat popup dengan data kartu_keluargas
-                                    var content = "Alamat: " + kartuKeluargaData.alamat; // Ganti dengan atribut yang Anda ingin tampilkan
-                                    L.popup()
-                                        .setLatLng(e.latlng)
-                                        .setContent(content)
-                                        .openOn(map);
-                                })
-                                .catch(error => {
-                                    console.error("Error fetching kartu_keluargas data:", error);
-                                });
-                        });
-                    }
+                        // Tambahkan baris untuk anggota keluarga
+                        content += "<tr><td><b>Nama KK:</b></td><td>";
 
-                    const geojsonLayer1 = L.geoJson(geojsonData, {
-                        onEachFeature: onEachFeature // Panggil fungsi onEachFeature
-                    }).addTo(map);
-                })
-                .catch(error => {
-                    console.error("Error fetching or processing GeoJSON data:", error);
-                });
+                        // Tampilkan nama kepala keluarga jika ada, jika tidak, tampilkan pesan
+                        if (kartuKeluargaData.anggota_keluargas && kartuKeluargaData.anggota_keluargas.length > 0) {
+                            var kepalaKeluarga = kartuKeluargaData.anggota_keluargas[0];
+                            content += kepalaKeluarga.nama_lengkap;
+                            // Ubah warna poligon menjadi hijau jika data kartu_keluarga tersedia
+                            layer.setStyle({ fillColor: 'green' });
+                        } else {
+                            content += "Belum ada data";
+                            // Ubah warna poligon menjadi abu-abu jika data kartu_keluarga tidak tersedia
+                            layer.setStyle({ fillColor: 'gray' });
+                        }
+
+                        content += "</td></tr>";
+
+                        // Tambahkan baris untuk alamat
+                        content += "<tr><td><b>Alamat:</b></td><td>";
+
+                        // Tampilkan alamat jika tersedia, jika tidak, tampilkan pesan
+                        if (kartuKeluargaData.alamat) {
+                            content += kartuKeluargaData.alamat;
+                        } else {
+                            content += "Belum ada data";
+                        }
+
+                        content += "</td></tr>";
+
+                        // Tambahkan baris untuk tombol "Tambah Data" dan "Lihat Detail"
+                        content += "<tr><td colspan='2' class='text-center'>" +
+                                        "<a href='/tambah-data/" + osm_id + "' class='btn btn-primary btn-sm text-white mx-1'>Tambah Data</a>" +
+                                        "<a href='/lihat-data/" + osm_id + "' class='btn btn-success btn-sm text-white mx-1'>Lihat Detail</a>" +
+                                    "</td></tr>";
+
+                        content += "</table>";
+
+                        // Buat popup dengan isi yang telah disiapkan
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(content)
+                            .openOn(map);
+                    })
+                    .catch(error => {
+                        console.error("Error fetching kartu_keluargas data:", error);
+                    });
+            });
+        }
+
+        // Buat layer GeoJSON dan atur fungsi onEachFeature sebagai event handler
+        const geojsonLayer = L.geoJson(geojsonData, {
+            onEachFeature: onEachFeature
+        }).addTo(map);
+    })
+    .catch(error => {
+        console.error("Error fetching or processing GeoJSON data:", error);
+    });
 
 
         </script>

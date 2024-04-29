@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('kecamatans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('provinsi_id');
+            $table->foreignId('kabupaten_id');
             $table->string('nama_kecamatan');
-            $table->string('geojson');
             $table->timestamps();
         });
     }

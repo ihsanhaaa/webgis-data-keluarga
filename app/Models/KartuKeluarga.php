@@ -23,6 +23,11 @@ class KartuKeluarga extends Model
         return $this->belongsTo(Kecamatan::class);
     }
 
+    public function kabupaten()
+    {
+        return $this->belongsTo(Kabupaten::class);
+    }
+
     public function desa()
     {
         return $this->belongsTo(Desa::class);
@@ -31,5 +36,10 @@ class KartuKeluarga extends Model
     public function provinsi()
     {
         return $this->belongsTo(Provinsi::class);
+    }
+
+    public function AnggotaKeluargas()
+    {
+        return $this->hasMany(AnggotaKeluarga::class);
     }
 }

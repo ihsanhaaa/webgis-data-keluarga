@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('desas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('kecamatan_id');
             $table->foreignId('provinsi_id');
+            $table->foreignId('kabupaten_id');
+            $table->foreignId('kecamatan_id');
             $table->string('nama_desa');
             $table->timestamps();
         });

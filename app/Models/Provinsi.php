@@ -13,9 +13,9 @@ class Provinsi extends Model
 
     protected $guarded = ['id'];
 
-    public function users()
+    public function kabupatens()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Kabupaten::class);
     }
 
     public function kecamatans()
@@ -25,6 +25,6 @@ class Provinsi extends Model
 
     public function desas()
     {
-        return $this->hasManyThrough(Desa::class, Kecamatan::class);
+        return $this->hasMany(Desa::class);
     }
 }

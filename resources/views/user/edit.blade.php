@@ -8,7 +8,7 @@
     @push('css-plugins')
     @endpush
 
-    
+    <h3>Halaman edit user</h3>
 
     @push('javascript-plugins')
     @endpush
